@@ -332,6 +332,7 @@ use super::{
 };
 #[cfg(feature = "iocp")]
 use crate::driver::op::{Overlapped, Syscall};
+#[cfg(feature = "iocp")]
 use crate::{driver::lifecycle::MaybeFdLifecycle, utils::slab::Slab};
 
 #[allow(unused)]
