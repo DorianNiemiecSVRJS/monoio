@@ -11,7 +11,7 @@ pub(crate) struct ScheduledIo {
     writer: Option<Waker>,
 
     #[cfg(windows)]
-    pub state: std::sync::Arc<std::sync::Mutex<iocp::SocketStateInner>>,
+    pub state: std::sync::Arc<std::sync::Mutex<super::iocp::SocketStateInner>>,
 }
 
 #[cfg(not(windows))]
@@ -25,7 +25,7 @@ impl Default for ScheduledIo {
 impl ScheduledIo {
     pub(crate) const fn new(
         #[cfg(windows)] state: std::sync::Arc<
-            std::sync::Mutex<iocp::SocketStateInner>,
+            std::sync::Mutex<super::iocp::SocketStateInner>,
         >,
     ) -> Self {
         Self {
