@@ -83,7 +83,7 @@ impl Poll {
         source: &mut SocketState,
         interest: Interest,
     ) -> io::Result<usize> {
-        let token = self.io_dispatch.insert(ScheduledIo::new());
+        let token = self.io_dispatch.insert(ScheduledIo::new(source.inner.clone()));
         match self.poll.register(source, Token(token), interest) {
             Ok(_) => Ok(token),
             Err(e) => {
