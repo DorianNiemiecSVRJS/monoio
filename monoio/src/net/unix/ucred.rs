@@ -32,6 +32,8 @@ impl UCred {
     }
 }
 
+#[cfg(target_os = "freebsd")]
+pub(crate) use self::impl_freebsd::get_peer_cred;
 #[cfg(any(target_os = "linux", target_os = "android", target_os = "openbsd"))]
 pub(crate) use self::impl_linux::get_peer_cred;
 #[cfg(any(target_os = "macos", target_os = "ios"))]
@@ -78,6 +80,54 @@ pub(crate) mod impl_macos {
                     uid: uid.assume_init(),
                     gid: gid.assume_init(),
                     pid: Some(pid.assume_init()),
+                })
+            } else {
+                Err(io::Error::last_os_error())
+            }
+        }
+    }
+}
+
+#[cfg(target_os = "freebsd")]
+pub(crate) mod impl_freebsd {
+    use std::{io, mem};
+
+    use libc::{c_void, getsockopt, socklen_t, xucred, LOCAL_PEERCRED};
+
+    use crate::net::unix::UnixStream;
+
+    pub(crate) fn get_peer_cred(sock: &UnixStream) -> io::Result<super::UCred> {
+        use std::os::unix::io::AsRawFd;
+
+        unsafe {
+            let raw_fd = sock.as_raw_fd();
+
+            let mut xucred: mem::MaybeUninit<xucred> = mem::MaybeUninit::uninit();
+
+            let xucred_size = mem::size_of::<xucred>();
+
+            // These paranoid checks should be optimized-out
+            assert!(mem::size_of::<u32>() <= mem::size_of::<usize>());
+            assert!(xucred_size <= u32::MAX as usize);
+
+            let mut xucred_size = xucred_size as socklen_t;
+
+            let ret = getsockopt(
+                raw_fd,
+                0,
+                LOCAL_PEERCRED,
+                xucred.as_mut_ptr() as *mut c_void,
+                &mut xucred_size,
+            );
+            if ret == 0 && xucred_size as usize == mem::size_of::<xucred>() {
+                let xucred = xucred.assume_init();
+                if xucred.cr_ngroups < 1 {
+                    return Err(io::Error::other("Cannot determine the group ID"));
+                }
+                Ok(super::UCred {
+                    uid: xucred.cr_uid,
+                    gid: xucred.cr_groups[0],
+                    pid: None,
                 })
             } else {
                 Err(io::Error::last_os_error())

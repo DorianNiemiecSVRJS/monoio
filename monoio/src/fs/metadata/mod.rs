@@ -45,7 +45,7 @@ pub async fn metadata<P: AsRef<Path>>(path: P) -> std::io::Result<Metadata> {
     #[cfg(target_os = "linux")]
     let op = Op::statx_using_path(path, flags)?;
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "freebsd"))]
     let op = Op::statx_using_path(path, true)?;
 
     op.result().await.map(FileAttr::from).map(Metadata)
@@ -85,7 +85,7 @@ pub async fn symlink_metadata<P: AsRef<Path>>(path: P) -> std::io::Result<Metada
     #[cfg(target_os = "linux")]
     let op = Op::statx_using_path(path, flags)?;
 
-    #[cfg(target_os = "macos")]
+    #[cfg(any(target_os = "macos", target_os = "freebsd"))]
     let op = Op::statx_using_path(path, false)?;
 
     op.result().await.map(FileAttr::from).map(Metadata)
@@ -393,14 +393,17 @@ impl MetadataExt for Metadata {
     }
 }
 
-#[cfg(all(target_os = "macos", not(target_pointer_width = "32")))]
+#[cfg(all(
+    any(target_os = "macos", target_os = "freebsd"),
+    not(target_pointer_width = "32")
+))]
 impl MetadataExt for Metadata {
     fn dev(&self) -> u64 {
         self.0.stat.st_dev as u64
     }
 
     fn ino(&self) -> u64 {
-        self.0.stat.st_ino
+        self.0.stat.st_ino.into()
     }
 
     fn mode(&self) -> u32 {
