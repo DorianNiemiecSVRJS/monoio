@@ -384,6 +384,8 @@ impl SharedFd {
                 std::mem::swap(&mut inner_skip_drop.state, &mut state);
                 let fd = &mut inner_skip_drop.fd;
 
+                let state = unsafe { &*state.get() };
+
                 #[allow(irrefutable_let_patterns)]
                 if let State::Legacy(idx) = state {
                     if CURRENT.is_set() {
@@ -392,8 +394,9 @@ impl SharedFd {
                                 super::Inner::Legacy(inner) => {
                                     // deregister it from driver(Poll and slab) and close fd
                                     if let Some(idx) = idx {
-                                        let _ =
-                                            super::legacy::LegacyDriver::deregister(inner, idx, fd);
+                                        let _ = super::legacy::LegacyDriver::deregister(
+                                            inner, *idx, fd,
+                                        );
                                     }
                                 }
                             }
