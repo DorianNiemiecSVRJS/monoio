@@ -538,6 +538,20 @@ impl Drop for Inner {
     }
 }
 
+#[cfg(windows)]
+impl Drop for Inner {
+    fn drop(&mut self) {
+        let fd = self.fd;
+        let state = unsafe { &mut *self.state.get() };
+        #[allow(unreachable_patterns)]
+        match state {
+            #[cfg(feature = "legacy")]
+            State::Legacy(idx) => drop_legacy(fd, *idx),
+            _ => {}
+        }
+    }
+}
+
 #[allow(unused_mut)]
 #[cfg(feature = "legacy")]
 fn drop_legacy(mut fd: RawFd, idx: Option<usize>) {
