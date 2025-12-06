@@ -519,14 +519,14 @@ impl Inner {
 #[cfg(unix)]
 impl Drop for Inner {
     fn drop(&mut self) {
-        let fd = self.fd;
+        let fd = &mut self.fd;
         let state = unsafe { &mut *self.state.get() };
         #[allow(unreachable_patterns)]
         match state {
             #[cfg(all(target_os = "linux", feature = "iouring"))]
             State::Uring(UringState::Init) | State::Uring(UringState::Waiting(..)) => {
-                if super::op::Op::close(fd).is_err() {
-                    let _ = unsafe { std::fs::File::from_raw_fd(fd) };
+                if super::op::Op::close(*fd).is_err() {
+                    let _ = unsafe { std::fs::File::from_raw_fd(*fd) };
                 };
             }
             #[cfg(feature = "legacy")]
@@ -541,7 +541,7 @@ impl Drop for Inner {
 #[cfg(windows)]
 impl Drop for Inner {
     fn drop(&mut self) {
-        let fd = self.fd;
+        let fd = &mut self.fd;
         let state = unsafe { &mut *self.state.get() };
         #[allow(unreachable_patterns)]
         match state {
@@ -554,7 +554,7 @@ impl Drop for Inner {
 
 #[allow(unused_mut)]
 #[cfg(feature = "legacy")]
-fn drop_legacy(mut fd: RawFd, idx: Option<usize>) {
+fn drop_legacy(mut fd: &mut RawFd, idx: Option<usize>) {
     if CURRENT.is_set() {
         CURRENT.with(|inner| {
             #[cfg(any(all(target_os = "linux", feature = "iouring"), feature = "legacy"))]
@@ -579,13 +579,13 @@ fn drop_legacy(mut fd: RawFd, idx: Option<usize>) {
         })
     }
     #[cfg(all(unix, feature = "legacy"))]
-    let _ = unsafe { std::fs::File::from_raw_fd(fd) };
+    let _ = unsafe { std::fs::File::from_raw_fd(*fd) };
     #[cfg(all(windows, feature = "legacy"))]
     let _ = unsafe { OwnedSocket::from_raw_socket(fd.socket) };
 }
 
 #[cfg(feature = "poll-io")]
-fn drop_uring_legacy(fd: RawFd, idx: Option<usize>) {
+fn drop_uring_legacy(fd: &mut RawFd, idx: Option<usize>) {
     if CURRENT.is_set() {
         CURRENT.with(|inner| {
             match inner {
@@ -605,7 +605,7 @@ fn drop_uring_legacy(fd: RawFd, idx: Option<usize>) {
         })
     }
     #[cfg(unix)]
-    let _ = unsafe { std::fs::File::from_raw_fd(fd) };
+    let _ = unsafe { std::fs::File::from_raw_fd(*fd) };
     #[cfg(windows)]
     let _ = unsafe { OwnedSocket::from_raw_socket(fd.socket) };
 }
