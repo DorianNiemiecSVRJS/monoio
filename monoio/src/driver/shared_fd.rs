@@ -2,7 +2,8 @@
 use std::os::unix::io::{AsRawFd, FromRawFd, RawFd};
 #[cfg(windows)]
 use std::os::windows::io::{
-    AsRawHandle, AsRawSocket, FromRawSocket, OwnedSocket, RawHandle, RawSocket,
+    AsRawHandle, AsRawSocket, FromRawHandle, FromRawSocket, OwnedHandle, OwnedSocket, RawHandle,
+    RawSocket,
 };
 use std::{cell::UnsafeCell, io, rc::Rc};
 
@@ -590,7 +591,22 @@ fn drop_legacy(mut fd: &mut RawFd, idx: Option<usize>) {
     #[cfg(all(unix, feature = "legacy"))]
     let _ = unsafe { std::fs::File::from_raw_fd(*fd) };
     #[cfg(all(windows, feature = "legacy"))]
-    let _ = unsafe { OwnedSocket::from_raw_socket(fd.socket) };
+    if unsafe { windows_sys::Win32::Storage::FileSystem::GetFileType(fd.socket as _) }
+        == windows_sys::Win32::Storage::FileSystem::FILE_TYPE_PIPE
+        && unsafe {
+            windows_sys::Win32::System::Pipes::GetNamedPipeInfo(
+                fd.socket as _,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        } == 0
+    {
+        let _ = unsafe { OwnedSocket::from_raw_socket(fd.socket) };
+    } else {
+        let _ = unsafe { OwnedHandle::from_raw_handle(fd.socket as _) };
+    }
 }
 
 #[cfg(feature = "poll-io")]
@@ -615,6 +631,21 @@ fn drop_uring_legacy(fd: &mut RawFd, idx: Option<usize>) {
     }
     #[cfg(unix)]
     let _ = unsafe { std::fs::File::from_raw_fd(*fd) };
-    #[cfg(windows)]
-    let _ = unsafe { OwnedSocket::from_raw_socket(fd.socket) };
+    #[cfg(all(windows, feature = "legacy"))]
+    if unsafe { windows_sys::Win32::Storage::FileSystem::GetFileType(fd.socket as _) }
+        == windows_sys::Win32::Storage::FileSystem::FILE_TYPE_PIPE
+        && unsafe {
+            windows_sys::Win32::System::Pipes::GetNamedPipeInfo(
+                fd.socket as _,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        } == 0
+    {
+        let _ = unsafe { OwnedSocket::from_raw_socket(fd.socket) };
+    } else {
+        let _ = unsafe { OwnedHandle::from_raw_handle(fd.socket as _) };
+    }
 }
