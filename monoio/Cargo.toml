@@ -48,6 +48,7 @@ windows-sys = { version = "0.48.0", features = [
     "Win32_System_WindowsProgramming",
 ] }
 cfg-if = "1.0.0"
+tempfile = { version = "3.2", optional = true }
 
 # unix dependencies
 [target.'cfg(unix)'.dependencies]
@@ -93,7 +94,7 @@ legacy = ["mio"]
 # io_uring support for linux
 iouring = ["io-uring"]
 # iocp support for windows
-iocp = ["mio"]
+iocp = ["mio", "tempfile"]
 # Provide completion IO adaptation
 completion_io = ["iouring", "iocp"]
 # tokio-compatible(only have effect when legacy is enabled and iouring is not)
