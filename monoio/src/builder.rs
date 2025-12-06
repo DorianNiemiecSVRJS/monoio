@@ -2,6 +2,8 @@ use std::{io, marker::PhantomData};
 
 #[cfg(all(target_os = "linux", feature = "iouring"))]
 use crate::driver::IoUringDriver;
+#[cfg(all(target_os = "windows", feature = "iocp"))]
+use crate::driver::IocpDriver;
 #[cfg(feature = "legacy")]
 use crate::driver::LegacyDriver;
 #[cfg(any(feature = "legacy", feature = "iouring"))]
@@ -97,6 +99,10 @@ direct_build!(TimeDriver<IoUringDriver>);
 direct_build!(LegacyDriver);
 #[cfg(feature = "legacy")]
 direct_build!(TimeDriver<LegacyDriver>);
+#[cfg(all(target_os = "windows", feature = "iocp"))]
+direct_build!(IocpDriver);
+#[cfg(all(target_os = "windows", feature = "iocp"))]
+direct_build!(TimeDriver<IocpDriver>);
 
 // ===== builder impl =====
 
@@ -132,6 +138,27 @@ impl Buildable for IoUringDriver {
             let driver = match this.entries {
                 Some(entries) => IoUringDriver::new_with_entries(&this.urb, entries)?,
                 None => IoUringDriver::new(&this.urb)?,
+            };
+            #[cfg(feature = "sync")]
+            let context = crate::runtime::Context::new(blocking_handle);
+            #[cfg(not(feature = "sync"))]
+            let context = crate::runtime::Context::new();
+            Ok(Runtime::new(context, driver))
+        })
+    }
+}
+
+#[cfg(all(target_os = "windows", feature = "iocp"))]
+impl Buildable for IocpDriver {
+    fn build(this: RuntimeBuilder<Self>) -> io::Result<Runtime<IocpDriver>> {
+        let thread_id = gen_id();
+        #[cfg(feature = "sync")]
+        let blocking_handle = this.blocking_handle;
+
+        BUILD_THREAD_ID.set(&thread_id, || {
+            let driver = match this.entries {
+                Some(entries) => IocpDriver::new_with_entries(entries)?,
+                None => IocpDriver::new()?,
             };
             #[cfg(feature = "sync")]
             let context = crate::runtime::Context::new(blocking_handle);
@@ -296,6 +323,8 @@ impl time_wrap::TimeWrapable for IoUringDriver {}
 impl time_wrap::TimeWrapable for LegacyDriver {}
 #[cfg(any(all(target_os = "linux", feature = "iouring"), feature = "legacy"))]
 impl time_wrap::TimeWrapable for FusionDriver {}
+#[cfg(all(target_os = "windows", feature = "iocp"))]
+impl time_wrap::TimeWrapable for IocpDriver {}
 
 impl<D: Driver> Buildable for TimeDriver<D>
 where
