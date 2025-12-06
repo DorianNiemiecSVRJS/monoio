@@ -373,6 +373,10 @@ pub(crate) struct IocpInner {
     // Waker receiver
     #[cfg(feature = "sync")]
     waker_receiver: flume::Receiver<std::task::Waker>,
+
+    // Poller for poll-based I/O
+    #[cfg(feature = "poll-io")]
+    poll: super::poll::Poll,
 }
 
 // When dropping the driver, all in-flight operations must have completed. This
@@ -395,6 +399,8 @@ impl IocpDriver {
         let inner = Rc::new(UnsafeCell::new(IocpInner {
             ops: Ops::new(),
             iocp: ManuallyDrop::new(CompletionPort::new(0)?),
+            #[cfg(feature = "poll-io")]
+            poll: super::poll::Poll::with_capacity(_entries as usize)?,
         }));
 
         Ok(IocpDriver { inner })
@@ -413,6 +419,8 @@ impl IocpDriver {
             shared_waker: Arc::new(EventWaker::new(waker)),
             eventfd_installed: false,
             waker_receiver,
+            #[cfg(feature = "poll-io")]
+            poll: super::poll::Poll::with_capacity(_entries as usize)?,
         }));
 
         let thread_id = crate::builder::BUILD_THREAD_ID.with(|id| *id);
@@ -573,6 +581,31 @@ impl IocpInner {
         let inner = unsafe { &mut *this.get() };
         let lifecycle = unsafe { inner.ops.slab.get(index).unwrap_unchecked() };
         lifecycle.poll_op(cx)
+    }
+
+    #[cfg(feature = "poll-io")]
+    pub(crate) fn poll_legacy_op<T: OpAble>(
+        this: &Rc<UnsafeCell<IocpInner>>,
+        data: &mut T,
+        cx: &mut Context<'_>,
+    ) -> Poll<CompletionMeta> {
+        let inner = unsafe { &mut *this.get() };
+        let (direction, index) = match data.legacy_interest() {
+            Some(x) => x,
+            None => {
+                // if there is no index provided, it means the action does not rely on fd
+                // readiness. do syscall right now.
+                return Poll::Ready(CompletionMeta {
+                    result: OpAble::legacy_call(data),
+                    flags: 0,
+                });
+            }
+        };
+
+        // wait io ready and do syscall
+        inner
+            .poll
+            .poll_syscall(cx, index, direction, || OpAble::legacy_call(data))
     }
 
     #[allow(unused_variables)]
