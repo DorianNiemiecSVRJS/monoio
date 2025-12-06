@@ -372,10 +372,14 @@ impl SharedFd {
     /// Try unwrap Rc, then deregister if registered and return rawfd.
     /// Note: this action will consume self and return rawfd without closing it.
     pub(crate) fn try_unwrap(self) -> Result<RawSocket, Self> {
+        use std::mem::ManuallyDrop;
+
         match Rc::try_unwrap(self.inner) {
-            Ok(mut _inner) => {
-                let fd = &mut _inner.fd;
-                let state = unsafe { &*_inner.state.get() };
+            Ok(inner) => {
+                // Only drop Inner's state, skip its drop impl.
+                let mut inner_skip_drop = ManuallyDrop::new(inner);
+                let fd = &mut inner_skip_drop.fd;
+                let state = unsafe { &*inner_skip_drop.state.get() };
 
                 #[allow(irrefutable_let_patterns)]
                 if let State::Legacy(idx) = state {
