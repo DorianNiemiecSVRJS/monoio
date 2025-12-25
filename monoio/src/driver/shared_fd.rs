@@ -577,7 +577,7 @@ fn drop_legacy(mut fd: &mut RawFd, idx: Option<usize>) {
                     // deregister it from driver(Poll and slab) and close fd
                     #[cfg(not(windows))]
                     if let Some(idx) = idx {
-                        let mut source = mio::unix::SourceFd(&fd);
+                        let mut source = mio::unix::SourceFd(&*fd);
                         let _ = super::legacy::LegacyDriver::deregister(inner, idx, &mut source);
                     }
                     #[cfg(windows)]
