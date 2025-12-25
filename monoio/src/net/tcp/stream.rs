@@ -93,13 +93,16 @@ impl TcpStream {
     /// performed.
     // TODO(chihai): Fix it, maybe spawn_blocking like tokio.
     pub async fn connect<A: ToSocketAddrs>(addr: A) -> io::Result<Self> {
-        // TODO(chihai): loop for all addrs
-        let addr = addr
-            .to_socket_addrs()?
-            .next()
-            .ok_or_else(|| io::Error::other("empty address"))?;
-
-        Self::connect_addr(addr).await
+        let addrs = addr.to_socket_addrs()?;
+        let mut last_error = None;
+        // The logic is similar to what std::net::TcpStream::connect does
+        for addr in addrs {
+            match Self::connect_addr(addr).await {
+                Ok(stream) => return Ok(stream),
+                Err(err) => last_error = Some(err),
+            }
+        }
+        Err(last_error.unwrap_or_else(|| io::Error::other("empty address")))
     }
 
     /// Establish a connection to the specified `addr`.
