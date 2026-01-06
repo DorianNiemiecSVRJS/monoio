@@ -281,7 +281,17 @@ impl LegacyInner {
         };
 
         // wait io ready and do syscall
-        let mut scheduled_io = inner.io_dispatch.get(index).expect("scheduled_io lost");
+        // Note: scheduled_io may be missing if the fd was deregistered
+        // concurrently with task polling. Treat as cancellation.
+        let Some(mut scheduled_io) = inner.io_dispatch.get(index) else {
+            return Poll::Ready(CompletionMeta {
+                result: Err(io::Error::new(
+                    io::ErrorKind::Other,
+                    "I/O operation canceled",
+                )),
+                flags: 0,
+            });
+        };
         let ref_mut = scheduled_io.as_mut();
 
         let readiness = ready!(ref_mut.poll_readiness(cx, direction));
