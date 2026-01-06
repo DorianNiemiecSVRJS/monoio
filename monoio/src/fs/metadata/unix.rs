@@ -54,13 +54,31 @@ impl From<libc::statx> for FileAttr {
         stat.st_size = buf.stx_size as libc::off64_t;
         stat.st_blksize = buf.stx_blksize as libc::blksize_t;
         stat.st_blocks = buf.stx_blocks as libc::blkcnt64_t;
-        stat.st_atime = buf.stx_atime.tv_sec as libc::time_t;
-        // `i64` on gnu-x86_64-x32, `c_ulong` otherwise.
-        stat.st_atime_nsec = buf.stx_atime.tv_nsec as _;
-        stat.st_mtime = buf.stx_mtime.tv_sec as libc::time_t;
-        stat.st_mtime_nsec = buf.stx_mtime.tv_nsec as _;
-        stat.st_ctime = buf.stx_ctime.tv_sec as libc::time_t;
-        stat.st_ctime_nsec = buf.stx_ctime.tv_nsec as _;
+        #[cfg(not(musl_v1_2_3))]
+        {
+            stat.st_atime = buf.stx_atime.tv_sec as libc::time_t;
+            // `i64` on gnu-x86_64-x32, `c_ulong` otherwise.
+            stat.st_atime_nsec = buf.stx_atime.tv_nsec as _;
+            stat.st_mtime = buf.stx_mtime.tv_sec as libc::time_t;
+            stat.st_mtime_nsec = buf.stx_mtime.tv_nsec as _;
+            stat.st_ctime = buf.stx_ctime.tv_sec as libc::time_t;
+            stat.st_ctime_nsec = buf.stx_ctime.tv_nsec as _;
+        }
+        #[cfg(musl_v1_2_3)]
+        {
+            stat.st_atim = libc::timespec {
+                tv_sec: buf.stx_atime.tv_sec as libc::time_t,
+                tv_nsec: buf.stx_atime.tv_nsec as _,
+            };
+            stat.st_mtim = libc::timespec {
+                tv_sec: buf.stx_mtime.tv_sec as libc::time_t,
+                tv_nsec: buf.stx_mtime.tv_nsec as _,
+            };
+            stat.st_ctim = libc::timespec {
+                tv_sec: buf.stx_ctime.tv_sec as libc::time_t,
+                tv_nsec: buf.stx_ctime.tv_nsec as _,
+            };
+        }
 
         let extra = StatxExtraFields {
             stx_mask: buf.stx_mask,

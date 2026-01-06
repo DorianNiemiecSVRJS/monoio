@@ -196,10 +196,20 @@ impl Metadata {
     ///    Ok(())
     /// }
     pub fn modified(&self) -> std::io::Result<SystemTime> {
-        let mtime = self.0.stat.st_mtime;
-        let mtime_nsec = self.0.stat.st_mtime_nsec as u32;
+        #[cfg(not(musl_v1_2_3))]
+        {
+            let mtime = self.0.stat.st_mtime;
+            let mtime_nsec = self.0.stat.st_mtime_nsec as u32;
 
-        Ok(SystemTime::UNIX_EPOCH + std::time::Duration::new(mtime as u64, mtime_nsec))
+            Ok(SystemTime::UNIX_EPOCH + std::time::Duration::new(mtime as u64, mtime_nsec))
+        }
+        #[cfg(musl_v1_2_3)]
+        {
+            let mtime = self.0.stat.st_mtim;
+            let mtime_nsec = mtime.tv_nsec as u32;
+
+            Ok(SystemTime::UNIX_EPOCH + std::time::Duration::new(mtime.tv_sec as u64, mtime_nsec))
+        }
     }
 
     /// Returns the last access time listed in this metadata.
@@ -218,10 +228,20 @@ impl Metadata {
     /// }
     /// ```
     pub fn accessed(&self) -> std::io::Result<SystemTime> {
-        let atime = self.0.stat.st_atime;
-        let atime_nsec = self.0.stat.st_atime_nsec as u32;
+        #[cfg(not(musl_v1_2_3))]
+        {
+            let atime = self.0.stat.st_atime;
+            let atime_nsec = self.0.stat.st_atime_nsec as u32;
 
-        Ok(SystemTime::UNIX_EPOCH + std::time::Duration::new(atime as u64, atime_nsec))
+            Ok(SystemTime::UNIX_EPOCH + std::time::Duration::new(atime as u64, atime_nsec))
+        }
+        #[cfg(musl_v1_2_3)]
+        {
+            let atime = self.0.stat.st_atim;
+            let atime_nsec = atime.tv_nsec as u32;
+
+            Ok(SystemTime::UNIX_EPOCH + std::time::Duration::new(atime.tv_sec as u64, atime_nsec))
+        }
     }
 
     /// Returns the creation time listed in this metadata.
@@ -361,27 +381,57 @@ impl MetadataExt for Metadata {
     }
 
     fn atime(&self) -> i64 {
-        self.0.stat.st_atime
+        #[cfg(not(musl_v1_2_3))]
+        let atime = self.0.stat.st_atime;
+        #[cfg(musl_v1_2_3)]
+        let atime = self.0.stat.st_atim.tv_sec;
+
+        atime
     }
 
     fn atime_nsec(&self) -> i64 {
-        self.0.stat.st_atime_nsec
+        #[cfg(not(musl_v1_2_3))]
+        let atime_nsec = self.0.stat.st_atime_nsec;
+        #[cfg(musl_v1_2_3)]
+        let atime_nsec = self.0.stat.st_atim.tv_nsec;
+
+        atime_nsec
     }
 
     fn mtime(&self) -> i64 {
-        self.0.stat.st_mtime
+        #[cfg(not(musl_v1_2_3))]
+        let mtime = self.0.stat.st_mtime;
+        #[cfg(musl_v1_2_3)]
+        let mtime = self.0.stat.st_mtim.tv_sec;
+
+        mtime
     }
 
     fn mtime_nsec(&self) -> i64 {
-        self.0.stat.st_mtime_nsec
+        #[cfg(not(musl_v1_2_3))]
+        let mtime_nsec = self.0.stat.st_mtime_nsec;
+        #[cfg(musl_v1_2_3)]
+        let mtime_nsec = self.0.stat.st_mtim.tv_nsec;
+
+        mtime_nsec
     }
 
     fn ctime(&self) -> i64 {
-        self.0.stat.st_ctime
+        #[cfg(not(musl_v1_2_3))]
+        let ctime = self.0.stat.st_ctime;
+        #[cfg(musl_v1_2_3)]
+        let ctime = self.0.stat.st_ctim.tv_sec;
+
+        ctime
     }
 
     fn ctime_nsec(&self) -> i64 {
-        self.0.stat.st_ctime_nsec
+        #[cfg(not(musl_v1_2_3))]
+        let ctime_nsec = self.0.stat.st_ctime_nsec;
+        #[cfg(musl_v1_2_3)]
+        let ctime_nsec = self.0.stat.st_ctim.tv_nsec;
+
+        ctime_nsec
     }
 
     fn blksize(&self) -> u64 {
