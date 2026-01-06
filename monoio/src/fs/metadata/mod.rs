@@ -548,27 +548,57 @@ impl MetadataExt for Metadata {
     }
 
     fn atime(&self) -> i64 {
-        self.0.stat.st_atime.into()
+        #[cfg(not(musl_v1_2_3))]
+        let atime = self.0.stat.st_atime;
+        #[cfg(musl_v1_2_3)]
+        let atime = self.0.stat.st_atim.tv_sec;
+
+        atime.into()
     }
 
     fn atime_nsec(&self) -> i64 {
-        self.0.stat.st_atime_nsec.into()
+        #[cfg(not(musl_v1_2_3))]
+        let atime_nsec = self.0.stat.st_atime_nsec;
+        #[cfg(musl_v1_2_3)]
+        let atime_nsec = self.0.stat.st_atim.tv_nsec;
+
+        atime_nsec.into()
     }
 
     fn mtime(&self) -> i64 {
-        self.0.stat.st_mtime.into()
+        #[cfg(not(musl_v1_2_3))]
+        let mtime = self.0.stat.st_mtime;
+        #[cfg(musl_v1_2_3)]
+        let mtime = self.0.stat.st_mtim.tv_sec;
+
+        mtime.into()
     }
 
     fn mtime_nsec(&self) -> i64 {
-        self.0.stat.st_mtime_nsec.into()
+        #[cfg(not(musl_v1_2_3))]
+        let mtime_nsec = self.0.stat.st_mtime_nsec;
+        #[cfg(musl_v1_2_3)]
+        let mtime_nsec = self.0.stat.st_mtim.tv_nsec;
+
+        mtime_nsec.into()
     }
 
     fn ctime(&self) -> i64 {
-        self.0.stat.st_ctime.into()
+        #[cfg(not(musl_v1_2_3))]
+        let ctime = self.0.stat.st_ctime;
+        #[cfg(musl_v1_2_3)]
+        let ctime = self.0.stat.st_ctim.tv_sec;
+
+        ctime.into()
     }
 
     fn ctime_nsec(&self) -> i64 {
-        self.0.stat.st_ctime_nsec.into()
+        #[cfg(not(musl_v1_2_3))]
+        let ctime_nsec = self.0.stat.st_ctime_nsec;
+        #[cfg(musl_v1_2_3)]
+        let ctime_nsec = self.0.stat.st_ctim.tv_nsec;
+
+        ctime_nsec.into()
     }
 
     fn blksize(&self) -> u64 {
