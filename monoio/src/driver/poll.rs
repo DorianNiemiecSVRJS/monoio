@@ -83,7 +83,9 @@ impl Poll {
         source: &mut SocketState,
         interest: Interest,
     ) -> io::Result<usize> {
-        let token = self.io_dispatch.insert(ScheduledIo::new(source.inner.clone()));
+        let token = self
+            .io_dispatch
+            .insert(ScheduledIo::new(source.inner.clone()));
         match self.poll.register(source, Token(token), interest) {
             Ok(_) => Ok(token),
             Err(e) => {
@@ -124,7 +126,14 @@ impl Poll {
         direction: Direction,
         syscall: impl FnOnce() -> io::Result<MaybeFd>,
     ) -> std::task::Poll<CompletionMeta> {
-        let mut scheduled_io = self.io_dispatch.get(token).expect("scheduled_io lost");
+        // Note: scheduled_io may be missing if the fd was deregistered
+        // concurrently with task polling. Treat as cancellation.
+        let Some(mut scheduled_io) = self.io_dispatch.get(token) else {
+            return std::task::Poll::Ready(CompletionMeta {
+                result: Err(io::Error::from_raw_os_error(125)),
+                flags: 0,
+            });
+        };
         let ref_mut = scheduled_io.as_mut();
         ready!(ref_mut.poll_readiness(cx, direction));
         match syscall() {
