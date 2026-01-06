@@ -285,10 +285,7 @@ impl LegacyInner {
         // concurrently with task polling. Treat as cancellation.
         let Some(mut scheduled_io) = inner.io_dispatch.get(index) else {
             return Poll::Ready(CompletionMeta {
-                result: Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "I/O operation canceled",
-                )),
+                result: Err(io::Error::from_raw_os_error(125)),
                 flags: 0,
             });
         };
