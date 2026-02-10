@@ -384,7 +384,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let atime = self.0.stat.st_atime;
         #[cfg(musl_v1_2_3)]
-        let atime = self.0.stat.st_atime.tv_sec;
+        let atime = self.0.stat.st_atim.tv_sec;
 
         atime
     }
@@ -393,7 +393,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let atime_nsec = self.0.stat.st_atime_nsec;
         #[cfg(musl_v1_2_3)]
-        let atime_nsec = self.0.stat.st_atime.tv_nsec;
+        let atime_nsec = self.0.stat.st_atim.tv_nsec;
 
         atime_nsec
     }
@@ -402,7 +402,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let mtime = self.0.stat.st_mtime;
         #[cfg(musl_v1_2_3)]
-        let mtime = self.0.stat.st_mtime.tv_sec;
+        let mtime = self.0.stat.st_mtim.tv_sec;
 
         mtime
     }
@@ -411,7 +411,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let mtime_nsec = self.0.stat.st_mtime_nsec;
         #[cfg(musl_v1_2_3)]
-        let mtime_nsec = self.0.stat.st_mtime.tv_nsec;
+        let mtime_nsec = self.0.stat.st_mtim.tv_nsec;
 
         mtime_nsec
     }
@@ -420,7 +420,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let ctime = self.0.stat.st_ctime;
         #[cfg(musl_v1_2_3)]
-        let ctime = self.0.stat.st_ctime.tv_sec;
+        let ctime = self.0.stat.st_ctim.tv_sec;
 
         ctime
     }
@@ -429,7 +429,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let ctime_nsec = self.0.stat.st_ctime_nsec;
         #[cfg(musl_v1_2_3)]
-        let ctime_nsec = self.0.stat.st_ctime.tv_nsec;
+        let ctime_nsec = self.0.stat.st_ctim.tv_nsec;
 
         ctime_nsec
     }
@@ -551,7 +551,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let atime = self.0.stat.st_atime;
         #[cfg(musl_v1_2_3)]
-        let atime = self.0.stat.st_atime.tv_sec;
+        let atime = self.0.stat.st_atim.tv_sec;
 
         atime.into()
     }
@@ -560,7 +560,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let atime_nsec = self.0.stat.st_atime_nsec;
         #[cfg(musl_v1_2_3)]
-        let atime_nsec = self.0.stat.st_atime.tv_nsec;
+        let atime_nsec = self.0.stat.st_atim.tv_nsec;
 
         atime_nsec.into()
     }
@@ -569,7 +569,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let mtime = self.0.stat.st_mtime;
         #[cfg(musl_v1_2_3)]
-        let mtime = self.0.stat.st_mtime.tv_sec;
+        let mtime = self.0.stat.st_mtim.tv_sec;
 
         mtime.into()
     }
@@ -578,7 +578,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let mtime_nsec = self.0.stat.st_mtime_nsec;
         #[cfg(musl_v1_2_3)]
-        let mtime_nsec = self.0.stat.st_mtime.tv_nsec;
+        let mtime_nsec = self.0.stat.st_mtim.tv_nsec;
 
         mtime_nsec.into()
     }
@@ -587,7 +587,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let ctime = self.0.stat.st_ctime;
         #[cfg(musl_v1_2_3)]
-        let ctime = self.0.stat.st_ctime.tv_sec;
+        let ctime = self.0.stat.st_ctim.tv_sec;
 
         ctime.into()
     }
@@ -596,7 +596,7 @@ impl MetadataExt for Metadata {
         #[cfg(not(musl_v1_2_3))]
         let ctime_nsec = self.0.stat.st_ctime_nsec;
         #[cfg(musl_v1_2_3)]
-        let ctime_nsec = self.0.stat.st_ctime.tv_nsec;
+        let ctime_nsec = self.0.stat.st_ctim.tv_nsec;
 
         ctime_nsec.into()
     }
