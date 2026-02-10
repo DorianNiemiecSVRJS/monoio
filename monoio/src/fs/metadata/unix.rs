@@ -66,15 +66,15 @@ impl From<libc::statx> for FileAttr {
         }
         #[cfg(musl_v1_2_3)]
         {
-            stat.st_atim = unsafe { std::mem::zeroed() };
-            stat.st_atim.tv_sec = buf.stx_atime.tv_sec as libc::time_t;
-            stat.st_atim.tv_nsec = buf.stx_atime.tv_nsec as _;
-            stat.st_mtim = unsafe { std::mem::zeroed() };
-            stat.st_mtim.tv_sec = buf.stx_mtime.tv_sec as libc::time_t;
-            stat.st_mtim.tv_nsec = buf.stx_mtime.tv_nsec as _;
-            stat.st_ctim = unsafe { std::mem::zeroed() };
-            stat.st_ctim.tv_sec = buf.stx_ctime.tv_sec as libc::time_t;
-            stat.st_ctim.tv_nsec = buf.stx_ctime.tv_nsec as _;
+            stat.st_atime = unsafe { std::mem::zeroed() };
+            stat.st_atime.tv_sec = buf.stx_atime.tv_sec as libc::time_t;
+            stat.st_atime.tv_nsec = buf.stx_atime.tv_nsec as _;
+            stat.st_mtime = unsafe { std::mem::zeroed() };
+            stat.st_mtime.tv_sec = buf.stx_mtime.tv_sec as libc::time_t;
+            stat.st_mtime.tv_nsec = buf.stx_mtime.tv_nsec as _;
+            stat.st_ctime = unsafe { std::mem::zeroed() };
+            stat.st_ctime.tv_sec = buf.stx_ctime.tv_sec as libc::time_t;
+            stat.st_ctime.tv_nsec = buf.stx_ctime.tv_nsec as _;
         }
 
         let extra = StatxExtraFields {
