@@ -1,4 +1,4 @@
-#![doc = include_str!("../../README.md")]
+//! Monoio async runtime
 #![cfg_attr(docsrs, feature(doc_cfg))]
 #![warn(missing_docs, unreachable_pub)]
 #![allow(stable_features)]
